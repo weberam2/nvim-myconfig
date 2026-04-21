@@ -17,27 +17,39 @@
 vim.cmd.colorscheme("catppuccin")
 
 -- INFO: formatting and syntax highlighting
-vim.pack.add({ "https://github.com/nvim-treesitter/nvim-treesitter" }, { confirm = false })
+vim.pack.add(
+	{ {
+		src = "https://github.com/nvim-treesitter/nvim-treesitter",
+		branch = "main",
+		build = ":TSUpdate",
+	} },
+	{ confirm = false }
+)
 
--- equivalent to :TSUpdate
-require("nvim-treesitter.install").update("all")
 require("nvim-treesitter").setup({
 	sync_install = true,
 	modules = {},
 	ignore_install = {},
-	ensure_installed = {
-		"bibtex",
-		"html",
-		"latex",
-		"lua",
-		"markdown",
-		"ninja",
-		"r",
-		"rnoweb",
-		"rst",
-		"vim",
-		"vimdoc",
-	},
+	"bash",
+	"bibtex",
+	"diff", -- Better highlighting for git diffs
+	"html",
+	"json",
+	"latex",
+	"lua",
+	"markdown",
+	"markdown_inline", -- CRITICAL: Highlights code blocks inside markdown/quarto
+	"ninja",
+	"python",
+	"query", -- Helps you debug TreeSitter highlighting issues
+	"r",
+	"regex", -- Syntax highlighting for complex Python/R regex strings
+	"rnoweb",
+	"rst",
+	"vim",
+	"vimdoc",
+	"yaml", -- For your Quarto headers, Docker, and Home Assistant
+	ensure_installed = {},
 	auto_install = true, -- autoinstall languages that are not installed yet
 	highlight = {
 		enable = true,
@@ -128,12 +140,18 @@ local lsp_servers = {
 		-- https://luals.github.io/wiki/settings/ | `:h nvim_get_runtime_file`
 		Lua = { workspace = { library = vim.api.nvim_get_runtime_file("lua", true) } },
 	},
-	pyright = {}, -- python type checking
-	prettier = {},
-	jupytext = {},
-	ruff = {}, -- python linter formatter
-	r_language_server = {}, -- r language server
-	air = {}, -- r formatter
+	-- DYNAMIC LANGUAGES ---
+	pyright = {}, -- Python: Best for "Go to definition" and type logic
+	ruff = {}, -- Python: Handles linting and lightning-fast formatting
+	r_language_server = {}, -- R: The standard for R development
+	--- DOCUMENTATION & MARKUP ---
+	marksman = {}, -- Markdown: For your blog and general notes
+	texlab = {}, -- LaTeX: For your academic papers and Beamer slides
+	--- CONFIG & WEB ---
+	yamlls = {}, -- YAML: For Docker Compose and Home Assistant configs
+	jsonls = {}, -- JSON: For your snippet files and VSCode configs
+	html = {}, -- HTML: For your personal website/GitHub Pages
+	bashls = {}, -- Bash: For your Raspberry Pi automation scripts}
 }
 
 vim.pack.add({
@@ -257,12 +275,14 @@ require("lualine").setup({
 vim.pack.add({ "https://github.com/folke/which-key.nvim" }, { confirm = false })
 require("which-key").setup({
 	spec = {
-		{ "<leader>s", group = "[S]earch", icon = { icon = "", color = "green" } },
 		{ "<leader>b", group = "[B]uffer" },
+		{ "<leader>c", group = "[C]ode" },
+		{ "<leader>cd", group = "[D]ap" },
+		{ "<leader>h", group = "Git [H]unk", mode = { "n", "v" } }, -- Enable gitsigns recommended keymaps first
+		{ "<leader>s", group = "[S]earch", icon = { icon = "", color = "green" } },
 		{ "<leader>t", group = "[T]oggle" },
 		{ "<leader>x", group = "Diagnostics" },
 		{ "<leader>z", group = "[Z]nippets" },
-		{ "<leader>h", group = "Git [H]unk", mode = { "n", "v" } }, -- Enable gitsigns recommended keymaps first
 		{ "gr", group = "LSP Actions", mode = { "n" } },
 	},
 })
@@ -299,12 +319,19 @@ vim.pack.add({ "https://github.com/stevearc/conform.nvim.git" }, { confirm = fal
 require("conform").setup({
 	formatters_by_ft = {
 		lua = { "stylua" },
-		-- Conform will run multiple formatters sequentially
-		python = { "isort", "black" },
-		-- You can customize some of the format options for the filetype (:help conform.format)
-		rust = { "rustfmt", lsp_format = "fallback" },
-		-- Conform will run the first available formatter
+		-- Use ruff for both sorting and formatting in one go
+		python = { "ruff_organize_imports", "ruff_format" },
+		-- R and Quarto formatting
+		r = { "styler" },
+		quarto = { "styler" },
+		-- Web and Config (Prettier handles HTML, YAML, JSON, Markdown)
 		javascript = { "prettierd", "prettier", stop_after_first = true },
+		html = { "prettierd", "prettier", stop_after_first = true },
+		json = { "prettierd", "prettier", stop_after_first = true },
+		yaml = { "prettierd", "prettier", stop_after_first = true },
+		markdown = { "prettierd", "prettier", stop_after_first = true },
+		-- LaTeX
+		tex = { "latexindent" },
 	},
 })
 vim.api.nvim_create_autocmd("BufWritePre", {
@@ -334,7 +361,7 @@ require("mini.surround").setup({
 	},
 	require("mini.files").setup({}),
 })
-vim.keymap.set("n", "<leader>E", "<Cmd>lua MiniFiles.open()<CR>", { desc = "Open/Close MiniFil[E]s" })
+vim.keymap.set("n", "<leader>e", "<Cmd>lua MiniFiles.open()<CR>", { desc = "Open/Close MiniFil[E]s" })
 
 -- ... and there is more!
 --  Check out: https://github.com/nvim-mini/mini.nvim
@@ -352,7 +379,7 @@ vim.pack.add({
 	"https://github.com/nvim-tree/nvim-web-devicons",
 })
 require("neo-tree").setup({})
-vim.keymap.set("n", "<leader>e", "<cmd>Neotree toggle<CR>", { desc = "Open/Close Neotre[e]" })
+vim.keymap.set("n", "<leader>E", "<cmd>Neotree toggle<CR>", { desc = "Open/Close Neotre[e]" })
 
 -- INFO: R stats
 vim.pack.add({ "https://github.com/R-nvim/R.nvim" })
@@ -537,8 +564,8 @@ require("mason-nvim-dap").setup({
 require("dap-python").setup("python")
 
 -- -- Keymaps for Debugging
--- -- vim.keymap.set("n", "<leader>db", "<cmd>DapToggleBreakpoint<cr>", { desc = "Toggle Breakpoint" })
--- -- vim.keymap.set("n", "<leader>dPt", function() require('dap-python').test_method() end, { desc = "Debug Method" })
+-- -- vim.keymap.set("n", "<leader>cdb", "<cmd>DapToggleBreakpoint<cr>", { desc = "Toggle Breakpoint" })
+-- -- vim.keymap.set("n", "<leader>cdPt", function() require('dap-python').test_method() end, { desc = "Debug Method" })
 
 -- DAP UI and Extras
 vim.pack.add({ "https://github.com/rcarriga/nvim-dap-ui" }, { confirm = false })
@@ -576,29 +603,51 @@ dap.listeners.before.event_exited["dapui_config"] = function()
 end
 
 -- Keymaps
-vim.keymap.set("n", "<leader>du", function()
+vim.keymap.set("n", "<leader>cdu", function()
 	dapui.toggle()
 end, { desc = "Toggle DAP UI" })
-vim.keymap.set({ "n", "v" }, "<leader>de", function()
+vim.keymap.set({ "n", "v" }, "<leader>cde", function()
 	dapui.eval()
 end, { desc = "Eval Expression" })
 
 -- Breakpoints and Stepping
-vim.keymap.set("n", "<leader>db", function()
+vim.keymap.set("n", "<leader>cdb", function()
 	dap.toggle_breakpoint()
 end, { desc = "Toggle Breakpoint" })
-vim.keymap.set("n", "<leader>dc", function()
+vim.keymap.set("n", "<leader>cdc", function()
 	dap.continue()
 end, { desc = "Continue" })
-vim.keymap.set("n", "<leader>da", function()
+vim.keymap.set("n", "<leader>cda", function()
 	dap.continue({ before = get_args })
 end, { desc = "Run with Args" })
-vim.keymap.set("n", "<leader>di", function()
+vim.keymap.set("n", "<leader>cdi", function()
 	dap.step_into()
 end, { desc = "Step Into" })
-vim.keymap.set("n", "<leader>dO", function()
+vim.keymap.set("n", "<leader>cdO", function()
 	dap.step_over()
 end, { desc = "Step Over" })
-vim.keymap.set("n", "<leader>dt", function()
+vim.keymap.set("n", "<leader>cdt", function()
 	dap.terminate()
 end, { desc = "Terminate" })
+
+-- Yanky Put history
+vim.pack.add({ "https://github.com/gbprod/yanky.nvim" }, { confirm = false })
+require("yanky").setup({
+	ring = {
+		history_length = 100,
+		storage = "shada", -- persists history even after restarting Neovim
+	},
+	system_clipboard = {
+		sync_with_ring = true,
+	},
+})
+
+-- Cycle through the yank ring after pasting
+vim.keymap.set("n", "p", "<Plug>(YankyPutAfter)")
+vim.keymap.set("n", "P", "<Plug>(YankyPutBefore)")
+vim.keymap.set("n", "<c-p>", "<Plug>(YankyPreviousEntry)")
+vim.keymap.set("n", "<c-n>", "<Plug>(YankyNextEntry)")
+
+require("telescope").load_extension("yank_history")
+
+vim.keymap.set("n", "<leader>p", "<cmd>Telescope yank_history<cr>", { desc = "[P]aste history" })
