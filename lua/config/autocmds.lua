@@ -103,3 +103,16 @@ vim.api.nvim_create_autocmd("FileType", {
 		vim.opt_local.spell = true
 	end,
 })
+
+-- csv Align
+-- Create an autocommand for CSV files
+vim.api.nvim_create_autocmd("BufWritePre", {
+	pattern = "*.csv",
+	callback = function()
+		-- Use pcall to prevent errors if the command doesn't exist
+		-- or if the file is empty/invalid
+		pcall(function()
+			vim.cmd("RainbowAlign")
+		end)
+	end,
+})
