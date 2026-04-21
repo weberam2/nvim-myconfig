@@ -26,12 +26,17 @@ require("nvim-treesitter").setup({
 	modules = {},
 	ignore_install = {},
 	ensure_installed = {
-		"lua",
-		"latex",
 		"bibtex",
+		"html",
+		"latex",
+		"lua",
 		"markdown",
+		"ninja",
 		"r",
 		"rnoweb",
+		"rst",
+		"vim",
+		"vimdoc",
 	},
 	auto_install = true, -- autoinstall languages that are not installed yet
 	highlight = {
@@ -59,8 +64,29 @@ require("LuaSnip").setup({
 })
 
 vim.pack.add({ "https://github.com/rafamadriz/friendly-snippets" }, { confirm = false })
--- require("friendly-snippets").setup({})
 require("luasnip.loaders.from_vscode").lazy_load()
+require("luasnip.loaders.from_vscode").lazy_load({
+	paths = { vim.fn.stdpath("config") .. "/lua/snippets" },
+})
+
+vim.pack.add({ "https://github.com/benfowler/telescope-luasnip.nvim" }, { confirm = false })
+vim.keymap.set("n", "<leader>ss", "<cmd>Telescope luasnip<cr>", { desc = "[S]earch [S]nippets" })
+
+vim.pack.add({ "https://github.com/chrisgrieser/nvim-scissors" }, { confirm = false })
+require("scissors").setup({
+	snippetDir = "../snippets",
+})
+vim.keymap.set("n", "<leader>ze", function()
+	require("scissors").editSnippet()
+end, { desc = "Snippet: Edit" })
+vim.keymap.set(
+	{ "n", "x" }, -- when used in visual mode, prefills the selection as snippet body
+	"<leader>za",
+	function()
+		require("scissors").addNewSnippet()
+	end,
+	{ desc = "Snippet: Add" }
+)
 
 vim.pack.add({ "https://github.com/saghen/blink.cmp" }, { confirm = false })
 require("blink.cmp").setup({
@@ -102,7 +128,12 @@ local lsp_servers = {
 		-- https://luals.github.io/wiki/settings/ | `:h nvim_get_runtime_file`
 		Lua = { workspace = { library = vim.api.nvim_get_runtime_file("lua", true) } },
 	},
-	r_language_server = {},
+	pyright = {}, -- python type checking
+	prettier = {},
+	jupytext = {},
+	ruff = {}, -- python linter formatter
+	r_language_server = {}, -- r language server
+	air = {}, -- r formatter
 }
 
 vim.pack.add({
@@ -169,10 +200,6 @@ for server, config in pairs(lsp_servers) do
 	})
 end
 
--- NOTE: if all you want is lsp + completion + highlighting, you're done.
--- the rest of the lines are just quality-of-life/appearance plugins and
--- can be removed.
-
 -- INFO: fuzzy finder
 vim.pack.add({
 	"https://github.com/nvim-lua/plenary.nvim", -- library dependency
@@ -234,6 +261,7 @@ require("which-key").setup({
 		{ "<leader>b", group = "[B]uffer" },
 		{ "<leader>t", group = "[T]oggle" },
 		{ "<leader>x", group = "Diagnostics" },
+		{ "<leader>z", group = "[Z]nippets" },
 		{ "<leader>h", group = "Git [H]unk", mode = { "n", "v" } }, -- Enable gitsigns recommended keymaps first
 		{ "gr", group = "LSP Actions", mode = { "n" } },
 	},
@@ -304,7 +332,10 @@ require("mini.surround").setup({
 		suffix_last = "l", -- Suffix to search with "prev" method
 		suffix_next = "n", -- Suffix to search with "next" method
 	},
+	require("mini.files").setup({}),
 })
+vim.keymap.set("n", "<leader>E", "<Cmd>lua MiniFiles.open()<CR>", { desc = "Open/Close MiniFil[E]s" })
+
 -- ... and there is more!
 --  Check out: https://github.com/nvim-mini/mini.nvim
 
@@ -457,3 +488,117 @@ vim.pack.add({ "https://github.com/mechatroner/rainbow_csv" }, { confirm = false
 -- INFO: Buffer line
 vim.pack.add({ "https://github.com/akinsho/bufferline.nvim" }, { confirm = false })
 require("bufferline").setup({})
+
+-- INFO: Python
+-- Testing
+vim.pack.add({ "https://github.com/nvim-neotest/neotest" }, { confirm = false })
+vim.pack.add({ "https://github.com/nvim-neotest/neotest-python" }, { confirm = false })
+vim.pack.add({ "https://github.com/nvim-neotest/nvim-nio" }, { confirm = false }) -- Required dependency for neotest
+-- Neotest
+require("neotest").setup({
+	adapters = {
+		require("neotest-python")({
+			runner = "pytest",
+			-- You can leave this empty to let it find the python in your path/venv
+			-- python = ".venv/bin/python",
+		}),
+	},
+})
+
+-- Keymaps for testing
+-- vim.keymap.set("n", "<leader>tn", function() require("neotest").run.run() end, { desc = "Test Nearest" })
+-- vim.keymap.set("n", "<leader>ts", function() require("neotest").summary.toggle() end, { desc = "Test Summary" })
+
+-- -- Virtual Environments
+vim.pack.add({ "https://github.com/linux-cultist/venv-selector.nvim" }, { confirm = false })
+require("venv-selector").setup({
+	name = { "venv", ".venv", "env", ".env" }, -- folders to look for
+	auto_refresh = true,
+})
+-- Keymap to select venv
+vim.keymap.set("n", "<leader>cv", "<cmd>VenvSelect<cr>", { desc = "Select VirtualEnv" })
+
+-- Debugging (DAP)
+vim.pack.add({ "https://github.com/mfussenegger/nvim-dap" }, { confirm = false })
+vim.pack.add({ "https://github.com/mfussenegger/nvim-dap-python" }, { confirm = false })
+vim.pack.add({ "https://github.com/jay-babu/mason-nvim-dap.nvim" }, { confirm = false })
+
+require("mason-nvim-dap").setup({
+	ensure_installed = { "python" },
+	handlers = {
+		-- This 'empty' function prevents mason-nvim-dap from overriding
+		-- the configurations provided by nvim-dap-python below
+		python = function() end,
+	},
+})
+
+-- Point this to where Mason installed debugpy
+-- Usually: ~/.local/share/nvim/mason/packages/debugpy/venv/bin/python
+require("dap-python").setup("python")
+
+-- -- Keymaps for Debugging
+-- -- vim.keymap.set("n", "<leader>db", "<cmd>DapToggleBreakpoint<cr>", { desc = "Toggle Breakpoint" })
+-- -- vim.keymap.set("n", "<leader>dPt", function() require('dap-python').test_method() end, { desc = "Debug Method" })
+
+-- DAP UI and Extras
+vim.pack.add({ "https://github.com/rcarriga/nvim-dap-ui" }, { confirm = false })
+vim.pack.add({ "https://github.com/theHamsta/nvim-dap-virtual-text" }, { confirm = false })
+vim.pack.add({ "https://github.com/nvim-neotest/nvim-nio" }, { confirm = false })
+
+local function get_args(config)
+	local args = type(config.args) == "function" and (config.args() or {}) or config.args or {}
+	local args_str = type(args) == "table" and table.concat(args, " ") or args
+
+	config = vim.deepcopy(config)
+	config.args = function()
+		local new_args = vim.fn.expand(vim.fn.input("Run with args: ", args_str))
+		return require("dap.utils").splitstr(new_args)
+	end
+	return config
+end
+
+local dap = require("dap")
+local dapui = require("dapui")
+
+-- Initial Setup
+dapui.setup({})
+require("nvim-dap-virtual-text").setup({})
+
+-- UI Auto-open/close listeners
+dap.listeners.after.event_initialized["dapui_config"] = function()
+	dapui.open()
+end
+dap.listeners.before.event_terminated["dapui_config"] = function()
+	dapui.close()
+end
+dap.listeners.before.event_exited["dapui_config"] = function()
+	dapui.close()
+end
+
+-- Keymaps
+vim.keymap.set("n", "<leader>du", function()
+	dapui.toggle()
+end, { desc = "Toggle DAP UI" })
+vim.keymap.set({ "n", "v" }, "<leader>de", function()
+	dapui.eval()
+end, { desc = "Eval Expression" })
+
+-- Breakpoints and Stepping
+vim.keymap.set("n", "<leader>db", function()
+	dap.toggle_breakpoint()
+end, { desc = "Toggle Breakpoint" })
+vim.keymap.set("n", "<leader>dc", function()
+	dap.continue()
+end, { desc = "Continue" })
+vim.keymap.set("n", "<leader>da", function()
+	dap.continue({ before = get_args })
+end, { desc = "Run with Args" })
+vim.keymap.set("n", "<leader>di", function()
+	dap.step_into()
+end, { desc = "Step Into" })
+vim.keymap.set("n", "<leader>dO", function()
+	dap.step_over()
+end, { desc = "Step Over" })
+vim.keymap.set("n", "<leader>dt", function()
+	dap.terminate()
+end, { desc = "Terminate" })
