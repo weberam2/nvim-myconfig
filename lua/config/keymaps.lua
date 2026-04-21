@@ -93,3 +93,9 @@ map("n", "<leader>xq", function()
 		vim.notify(err, vim.log.levels.ERROR)
 	end
 end, { desc = "Quickfix List" })
+
+-- INFO: Undotree
+map("n", "<leader>U", function()
+	vim.cmd.packadd("nvim.undotree")
+	require("undotree").open()
+end, { desc = "Toggle Undotree" })
