@@ -1,0 +1,16 @@
+{
+  "info": {
+    "body": [
+      "-- INFO: $1",
+      "$0"
+    ],
+    "prefix": "info"
+  },
+  "pack": {
+    "body": [
+      "vim.pack.add({\"https://github.com/$1\"}, {confirm = false})",
+      "$0"
+    ],
+    "prefix": "pack"
+  }
+}
