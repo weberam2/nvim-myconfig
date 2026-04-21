@@ -630,7 +630,7 @@ vim.keymap.set("n", "<leader>cdt", function()
 	dap.terminate()
 end, { desc = "Terminate" })
 
--- Yanky Put history
+-- INFO: Yanky Put history
 vim.pack.add({ "https://github.com/gbprod/yanky.nvim" }, { confirm = false })
 require("yanky").setup({
 	ring = {
@@ -651,3 +651,10 @@ vim.keymap.set("n", "<c-n>", "<Plug>(YankyNextEntry)")
 require("telescope").load_extension("yank_history")
 
 vim.keymap.set("n", "<leader>p", "<cmd>Telescope yank_history<cr>", { desc = "[P]aste history" })
+
+-- INFO: Quarto
+-- Required for Quarto to handle embedded code chunks
+vim.pack.add({ "https://github.com/jmbuhr/otter.nvim" }, { confirm = false })
+vim.pack.add({ "https://github.com/quarto-dev/quarto-nvim" }, { confirm = false })
+require("otter").setup({})
+require("quarto").setup({})
