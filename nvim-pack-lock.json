@@ -141,6 +141,10 @@
       "rev": "0fd43fb4b1f073931c4b481f5f3b7cea3749e190",
       "src": "https://github.com/MeanderingProgrammer/render-markdown.nvim"
     },
+    "telescope-bibtex.nvim": {
+      "rev": "289a6f86ebec06e8ae1590533b732b9981d84900",
+      "src": "https://github.com/nvim-telescope/telescope-bibtex.nvim"
+    },
     "telescope-luasnip.nvim": {
       "rev": "07a2a2936a7557404c782dba021ac0a03165b343",
       "src": "https://github.com/benfowler/telescope-luasnip.nvim"

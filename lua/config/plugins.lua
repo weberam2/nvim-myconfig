@@ -675,3 +675,22 @@ vim.pack.add({ "https://github.com/jmbuhr/otter.nvim" }, { confirm = false })
 vim.pack.add({ "https://github.com/quarto-dev/quarto-nvim" }, { confirm = false })
 require("otter").setup({})
 require("quarto").setup({})
+
+-- INFO: telescope bibtex
+-- possible alternative: https://github.com/jmbuhr/telescope-zotero.nvim?tab=readme-ov-file
+-- grabs from a global zotero database, and then puts it into the .bib file for you
+vim.pack.add({ "https://github.com/nvim-telescope/telescope-bibtex.nvim" }, { confirm = false })
+require("telescope").load_extension("bibtex")
+-- autocmd
+vim.api.nvim_create_autocmd("FileType", {
+	pattern = { "tex", "quarto", "rmarkdown", "markdown" },
+	callback = function()
+		-- Use buffer = true so the mapping only exists in the writing buffer
+		vim.keymap.set("n", "<localleader>lb", function()
+			require("telescope").extensions.bibtex.bibtex({
+				prompt_title = "BibTeX",
+				format = "plain",
+			})
+		end, { buffer = true, desc = "Find BibTeX Entry" })
+	end,
+})
