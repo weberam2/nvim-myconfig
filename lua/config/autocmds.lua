@@ -116,3 +116,12 @@ vim.api.nvim_create_autocmd("BufWritePre", {
 		end)
 	end,
 })
+
+vim.api.nvim_create_autocmd("FileType", {
+	pattern = "floaterm",
+	callback = function()
+		vim.opt_local.buflisted = false
+		-- Buffer-local mapping: only active when you are in a floaterm
+		vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n><cmd>FloatermToggle<CR>", { buffer = true })
+	end,
+})
