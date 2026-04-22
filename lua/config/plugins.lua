@@ -129,6 +129,7 @@ require("blink.cmp").setup({
 	},
 	fuzzy = {
 		implementation = "lua",
+		-- prebuilt_binaries = { download = true},
 	},
 })
 
@@ -572,13 +573,29 @@ vim.pack.add({ "https://github.com/rcarriga/nvim-dap-ui" }, { confirm = false })
 vim.pack.add({ "https://github.com/theHamsta/nvim-dap-virtual-text" }, { confirm = false })
 vim.pack.add({ "https://github.com/nvim-neotest/nvim-nio" }, { confirm = false })
 
-local function get_args(config)
-	local args = type(config.args) == "function" and (config.args() or {}) or config.args or {}
-	local args_str = type(args) == "table" and table.concat(args, " ") or args
+-- local function get_args(config)
+-- 	local args = type(config.args) == "function" and (config.args() or {}) or config.args or {}
+-- 	local args_str = type(args) == "table" and table.concat(args, " ") or args
+--
+-- 	config = vim.deepcopy(config)
+-- 	config.args = function()
+-- 		local new_args = vim.fn.expand(vim.fn.input("Run with args: ", args_str))
+-- 		return require("dap.utils").splitstr(new_args)
+-- 	end
+-- 	return config
+-- end
 
+local function get_args(config)
+	-- 1. Determine current args
+	local args = type(config.args) == "function" and (config.args() or {}) or config.args or {}
+	-- 2. Force args_str to be a string
+	---@type string
+	local args_str = type(args) == "table" and table.concat(args, " ") or tostring(args)
 	config = vim.deepcopy(config)
 	config.args = function()
-		local new_args = vim.fn.expand(vim.fn.input("Run with args: ", args_str))
+		-- 3. Use the guaranteed string here
+		local input_str = vim.fn.input("Run with args: ", args_str)
+		local new_args = vim.fn.expand(input_str) --[[@as string]]
 		return require("dap.utils").splitstr(new_args)
 	end
 	return config
