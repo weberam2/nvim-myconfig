@@ -171,8 +171,7 @@ require("mason-tool-installer").setup({
 	ensure_installed = vim.tbl_keys(lsp_servers),
 })
 
--- configure each lsp server on the table
--- to check what clients are attached to the current buffer, use
+-- configure each lsp server on the table to check what clients are attached to the current buffer, use
 -- `:checkhealth vim.lsp`. to view default lsp keybindings, use `:h lsp-defaults`.
 
 -- gra → code actions
@@ -279,6 +278,7 @@ require("which-key").setup({
 		{ "<leader>b", group = "[B]uffer" },
 		{ "<leader>c", group = "[C]ode" },
 		{ "<leader>cd", group = "[D]ap" },
+		{ "<leader>g", group = "[G]it" },
 		{ "<leader>h", group = "Git [H]unk", mode = { "n", "v" } }, -- Enable gitsigns recommended keymaps first
 		{ "<leader>s", group = "[S]earch", icon = { icon = "", color = "green" } },
 		{ "<leader>t", group = "[T]oggle" },
@@ -694,3 +694,7 @@ vim.api.nvim_create_autocmd("FileType", {
 		end, { buffer = true, desc = "Find BibTeX Entry" })
 	end,
 })
+
+-- INFO: LazyGit
+vim.pack.add({ "https://github.com/kdheepak/lazygit.nvim" }, { confirm = false })
+vim.keymap.set("n", "<leader>gg", "<cmd>LazyGit<cr>", { desc = "Lazy[g]it" })
