@@ -177,6 +177,10 @@
       "rev": "2cfdc3b24e7ebaa64f5a1a04b00555600c622b79",
       "src": "https://github.com/jpalardy/vim-slime"
     },
+    "vim-table-mode": {
+      "rev": "bb025308a45c67c7c8f0763ba37bc2ee3f534df0",
+      "src": "https://github.com/dhruvasagar/vim-table-mode"
+    },
     "vimtex": {
       "rev": "9306903316c3ddd250676b7cf97c84a84c9c8f99",
       "src": "https://github.com/lervag/vimtex"

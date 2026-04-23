@@ -434,7 +434,9 @@ require("R").setup({
 				mode = { "n", "x" },
 				{ "<localleader>a", group = "all" },
 				{ "<localleader>b", group = "between marks" },
+				{ "<localleader>C", group = "Cite" },
 				{ "<localleader>c", group = "chunks" },
+				{ "<localleader>e", group = "equations" },
 				{ "<localleader>f", group = "functions" },
 				{ "<localleader>g", group = "goto" },
 				{ "<localleader>i", group = "install" },
@@ -728,7 +730,7 @@ vim.api.nvim_create_autocmd("FileType", {
 	pattern = { "tex", "quarto", "rmarkdown", "markdown" },
 	callback = function()
 		-- Use buffer = true so the mapping only exists in the writing buffer
-		vim.keymap.set("n", "<localleader>lb", function()
+		vim.keymap.set("n", "<localleader>Cb", function()
 			require("telescope").extensions.bibtex.bibtex({
 				prompt_title = "BibTeX",
 				format = "plain",
@@ -740,3 +742,20 @@ vim.api.nvim_create_autocmd("FileType", {
 -- INFO: LazyGit
 vim.pack.add({ "https://github.com/kdheepak/lazygit.nvim" }, { confirm = false })
 vim.keymap.set("n", "<leader>gg", "<cmd>LazyGit<cr>", { desc = "Lazy[g]it" })
+
+-- INFO: Vim Table
+vim.pack.add({ "https://github.com/dhruvasagar/vim-table-mode" }, { confirm = false })
+-- Configuration
+vim.g.table_mode_corner = "|" -- Ensures it uses Markdown-compatible corners
+vim.api.nvim_create_autocmd("FileType", {
+	pattern = { "tex", "quarto", "rmarkdown", "markdown" },
+	callback = function()
+		-- Use buffer = true so the mapping only exists in the writing buffer
+		vim.keymap.set(
+			"n",
+			"<localleader>T",
+			"<cmd>TableModeToggle<cr>",
+			{ buffer = true, desc = "Toggle Table Formatting" }
+		)
+	end,
+})
