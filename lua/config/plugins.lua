@@ -324,7 +324,7 @@ require("conform").setup({
 		python = { "ruff_organize_imports", "ruff_format" },
 		-- R and Quarto formatting
 		r = { "styler" },
-		quarto = { "styler" },
+		-- quarto = { "prettier", "styler" },
 		-- Web and Config (Prettier handles HTML, YAML, JSON, Markdown)
 		javascript = { "prettierd", "prettier", stop_after_first = true },
 		html = { "prettierd", "prettier", stop_after_first = true },
@@ -333,6 +333,17 @@ require("conform").setup({
 		markdown = { "prettierd", "prettier", stop_after_first = true },
 		-- LaTeX
 		tex = { "latexindent" },
+	},
+	formatters = {
+		prettier = {
+			-- This forces Prettier to treat .qmd as Markdown
+			args = function(self, ctx)
+				if vim.bo[ctx.buf].filetype == "quarto" then
+					return { "--stdin-filepath", "$FILENAME", "--parser", "markdown" }
+				end
+				return { "--stdin-filepath", "$FILENAME" }
+			end,
+		},
 	},
 })
 vim.api.nvim_create_autocmd("BufWritePre", {
@@ -384,6 +395,7 @@ vim.keymap.set("n", "<leader>E", "<cmd>Neotree toggle<CR>", { desc = "Open/Close
 
 -- INFO: R stats
 vim.pack.add({ "https://github.com/R-nvim/R.nvim" })
+-- vim.g.R_filetypes = { "r", "rmd" }
 require("R").setup({
 	-- Create a table with the options to be passed to setup()
 	hook = {
@@ -669,12 +681,23 @@ require("telescope").load_extension("yank_history")
 
 vim.keymap.set("n", "<leader>p", "<cmd>Telescope yank_history<cr>", { desc = "[P]aste history" })
 
--- INFO: Quarto
--- Required for Quarto to handle embedded code chunks
-vim.pack.add({ "https://github.com/jmbuhr/otter.nvim" }, { confirm = false })
-vim.pack.add({ "https://github.com/quarto-dev/quarto-nvim" }, { confirm = false })
-require("otter").setup({})
-require("quarto").setup({})
+-- INFO: Math equations
+
+vim.pack.add({ "https://github.com/jbyuki/nabla.nvim" }, { confirm = false })
+vim.api.nvim_create_autocmd("FileType", {
+	pattern = { "tex", "markdown", "quarto", "rmarkdown" },
+	callback = function()
+		local opts = { buffer = true, desc = "Toggle math [e]quations (Nabla)" }
+		-- This provides the "visual" math overlay for your LaTeX/Quarto files
+		vim.keymap.set("n", "<localleader>ee", function()
+			require("nabla").toggle_virt()
+		end, opts)
+		-- Optional: Open a floating window with the rendered equation
+		vim.keymap.set("n", "<localleader>ep", function()
+			require("nabla").popup()
+		end, { buffer = true, desc = "[p]opup math equation" })
+	end,
+})
 
 -- INFO: telescope bibtex
 -- possible alternative: https://github.com/jmbuhr/telescope-zotero.nvim?tab=readme-ov-file
