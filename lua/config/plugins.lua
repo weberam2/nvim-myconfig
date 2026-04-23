@@ -374,6 +374,25 @@ require("mini.surround").setup({
 	require("mini.files").setup({}),
 })
 vim.keymap.set("n", "<leader>e", "<Cmd>lua MiniFiles.open()<CR>", { desc = "Open/Close MiniFil[E]s" })
+vim.api.nvim_create_autocmd("User", {
+	pattern = "MiniFilesBufferCreate",
+	callback = function(args)
+		local buf_id = args.data.buf_id
+		-- Create a mapping for <CR> (Enter)
+		vim.keymap.set("n", "<CR>", function()
+			-- 1. Get the current entry under the cursor
+			local fs_entry = require("mini.files").get_fs_entry()
+			-- 2. Only close if it's a file.
+			-- If it's a directory, we likely want to stay in to keep navigating.
+			if fs_entry ~= nil and fs_entry.fs_type == "file" then
+				require("mini.files").go_in()
+				require("mini.files").close()
+			else
+				require("mini.files").go_in()
+			end
+		end, { buffer = buf_id, desc = "Open file and close explorer" })
+	end,
+})
 
 -- ... and there is more!
 --  Check out: https://github.com/nvim-mini/mini.nvim
