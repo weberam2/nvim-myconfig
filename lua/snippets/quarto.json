@@ -1,0 +1,21 @@
+{
+  "author": {
+    "body": [
+      "- name: $1",
+      "  orcid: $2",
+      "  corresponding: $3",
+      "  email: $4",
+      "  roles:",
+      "    - $5",
+      "  affiliations:",
+      "    - ref: $6",
+      "  degrees:",
+      "    - $7"
+    ],
+    "prefix": "author"
+  },
+  "todo": {
+    "body": "<!-- TODO: $1 -->",
+    "prefix": "todo"
+  }
+}
