@@ -6,6 +6,18 @@
           "lua"
         ],
         "path": "./lua.json"
+      },
+      {
+        "language": [
+          "quarto"
+        ],
+        "path": "./quarto.json"
+      },
+      {
+        "language": [
+          "markdown"
+        ],
+        "path": "./markdown.json"
       }
     ]
   },
