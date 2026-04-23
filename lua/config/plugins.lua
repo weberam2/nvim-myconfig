@@ -86,7 +86,7 @@ vim.keymap.set("n", "<leader>ss", "<cmd>Telescope luasnip<cr>", { desc = "[S]ear
 
 vim.pack.add({ "https://github.com/chrisgrieser/nvim-scissors" }, { confirm = false })
 require("scissors").setup({
-	snippetDir = "../snippets",
+	snippetDir = vim.fn.stdpath("config") .. "/lua/snippets",
 })
 vim.keymap.set("n", "<leader>ze", function()
 	require("scissors").editSnippet()
