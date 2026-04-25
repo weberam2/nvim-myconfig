@@ -97,3 +97,8 @@ map("n", "<leader>U", function()
 	vim.cmd.packadd("nvim.undotree")
 	require("undotree").open()
 end, { desc = "Toggle Undotree" })
+
+-- INFO: Difftool
+map("n", "<leader>D", function()
+	vim.cmd.packadd("nvim.difftool")
+end, { desc = "Load Difftool" })
