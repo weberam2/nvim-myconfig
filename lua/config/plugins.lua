@@ -323,7 +323,7 @@ require("conform").setup({
 		-- Use ruff for both sorting and formatting in one go
 		python = { "ruff_organize_imports", "ruff_format" },
 		-- R and Quarto formatting
-		r = { "styler" },
+		r = { "air" },
 		-- quarto = { "prettier", "styler" },
 		-- Web and Config (Prettier handles HTML, YAML, JSON, Markdown)
 		javascript = { "prettierd", "prettier", stop_after_first = true },
@@ -759,3 +759,154 @@ vim.api.nvim_create_autocmd("FileType", {
 		)
 	end,
 })
+
+-- INFO: Jupytext (convert ipynb to qmd and back)
+vim.pack.add({ "https://github.com/GCBallesteros/jupytext.nvim" }, { confirm = false })
+require("jupytext").setup({
+	custom_language_formatting = {
+		python = {
+			extension = "qmd",
+			style = "quarto",
+			force_ft = "quarto",
+		},
+		r = {
+			extension = "qmd",
+			style = "quarto",
+			force_ft = "quarto",
+		},
+	},
+})
+
+-- TODO: add slime for jupytext sending code to ipython
+-- INFO: Slime
+vim.pack.add({ "https://github.com/jpalardy/vim-slime" }, { confirm = false })
+-- globals that were in init/config
+vim.g.slime_target = "neovim"
+vim.g.slime_no_mappings = true
+vim.g.slime_python_ipython = 1
+vim.g.slime_input_pid = false
+vim.g.slime_suggest_default = true
+vim.g.slime_menu_config = false
+vim.g.slime_neovim_ignore_unlisted = true
+-- buffer-local default (was in init)
+vim.b["quarto_is_python_chunk"] = false
+-- Quarto python chunk detection (was in init)
+Quarto_is_in_python_chunk = function()
+	require("otter.tools.functions").is_otter_language_context("python")
+end
+-- Vimscript block (was in init's vim.cmd)
+vim.cmd([[
+  let g:slime_dispatch_ipython_pause = 100
+  function SlimeOverride_EscapeText_quarto(text)
+    call v:lua.Quarto_is_in_python_chunk()
+    if exists('g:slime_python_ipython') && len(split(a:text,"\n")) > 1 && b:quarto_is_python_chunk && !(exists('b:quarto_is_r_mode') && b:quarto_is_r_mode)
+      return ["%cpaste -q\n", g:slime_dispatch_ipython_pause, a:text, "--", "\n"]
+    else
+      if exists('b:quarto_is_r_mode') && b:quarto_is_r_mode && b:quarto_is_python_chunk
+        return [a:text, "\n"]
+      else
+        return [a:text]
+      end
+    end
+  endfunction
+]])
+-- Keymaps
+local slime_fts = { "python", "r", "quarto", "rmarkdown" }
+local function mark_terminal()
+	local job_id = vim.b.terminal_job_id
+	vim.print("job_id: " .. job_id)
+end
+local function set_terminal()
+	vim.fn.call("slime#config", {})
+end
+vim.api.nvim_create_autocmd("FileType", {
+	pattern = slime_fts,
+	callback = function()
+		local opts = { buffer = true }
+		vim.keymap.set(
+			"n",
+			"<localleader>Sm",
+			mark_terminal,
+			vim.tbl_extend("force", opts, { desc = "[m]ark terminal" })
+		)
+		vim.keymap.set("n", "<localleader>Ss", set_terminal, vim.tbl_extend("force", opts, { desc = "[s]et terminal" }))
+		vim.keymap.set(
+			"v",
+			"<S-CR>",
+			"<Plug>SlimeRegionSend",
+			vim.tbl_extend("force", opts, { desc = "Send selection to REPL" })
+		)
+		vim.keymap.set(
+			"n",
+			"<S-CR>",
+			"<Plug>SlimeLineSend",
+			vim.tbl_extend("force", opts, { desc = "Send line to REPL" })
+		)
+		vim.keymap.set("n", "<localleader>Si", function()
+			vim.cmd("botright split")
+			vim.api.nvim_win_set_height(0, 10) -- 15 lines tall
+			vim.cmd("terminal ipython")
+			vim.cmd("startinsert")
+		end, { buffer = true, desc = "Open [i]Python terminal (horizontal split)" })
+	end,
+})
+
+-- INFO: Otter
+vim.pack.add({ "https://github.com/jmbuhr/otter.nvim" }, { config = false })
+
+local otter = require("otter")
+otter.setup({})
+
+vim.api.nvim_create_autocmd("FileType", {
+	pattern = { "quarto", "rmarkdown" },
+	callback = function()
+		local opts = { buffer = true }
+		vim.keymap.set(
+			"n",
+			"<localleader>Soa",
+			otter.activate,
+			vim.tbl_extend("force", opts, { desc = "Activate otter" })
+		)
+		vim.keymap.set(
+			"n",
+			"<localleader>Sod",
+			otter.deactivate,
+			vim.tbl_extend("force", opts, { desc = "Deactivate otter" })
+		)
+	end,
+})
+
+-- INFO: QUARTO
+vim.pack.add({ "https://github.com/quarto-dev/quarto-nvim" }, { confirm = false })
+require("quarto").setup({
+	debug = false,
+	closePreviewOnExit = true,
+	lspFeatures = {
+		enabled = true,
+		chunks = "curly",
+		languages = { "r", "python", "julia", "bash", "html" },
+		diagnostics = {
+			enabled = false,
+			triggers = { "BufWritePost" },
+		},
+		completion = {
+			enabled = false,
+		},
+	},
+	codeRunner = {
+		enabled = true,
+		default_method = "slime", -- "molten", "slime", "iron" or <function>
+		ft_runners = {}, -- filetype to runner, ie. `{ python = "molten" }`.
+		-- Takes precedence over `default_method`
+		never_run = { "yaml" }, -- filetypes which are never sent to a code runner
+	},
+})
+local runner = require("quarto.runner")
+vim.keymap.set("n", "<localleader>Sc", runner.run_cell, { desc = "run cell", silent = true })
+vim.keymap.set("n", "<localleader>Su", runner.run_above, { desc = "run cell and above", silent = true })
+vim.keymap.set("n", "<localleader>Sa", runner.run_all, { desc = "run all cells", silent = true })
+vim.keymap.set("n", "<localleader>Sl", runner.run_line, { desc = "run line", silent = true })
+vim.keymap.set("v", "<localleader>S", runner.run_range, { desc = "run visual range", silent = true })
+vim.keymap.set("n", "<localleader>SA", function()
+	runner.run_all(true)
+end, { desc = "run all cells of all languages", silent = true })
