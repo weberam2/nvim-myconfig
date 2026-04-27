@@ -541,10 +541,29 @@ vim.api.nvim_create_autocmd("FileType", {
 	end,
 })
 vim.keymap.set("n", "<leader>T", "<cmd>FloatermToggle<CR>", { desc = "Toggle floaterm" })
+vim.api.nvim_create_autocmd("FileType", {
+	pattern = "floaterm",
+	callback = function()
+		vim.opt_local.buflisted = false
+		-- Buffer-local mapping: only active when you are in a floaterm
+		vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n><cmd>FloatermToggle<CR>", { buffer = true })
+	end,
+})
 
 -- INFO: CSV
 -- how to use: https://lorefnon.me/2024/01/17/Effectively-working-with-csv-files-in-vim/
 vim.pack.add({ "https://github.com/mechatroner/rainbow_csv" }, { confirm = false })
+-- csv Align
+vim.api.nvim_create_autocmd("BufWritePre", {
+	pattern = "*.csv",
+	callback = function()
+		-- Use pcall to prevent errors if the command doesn't exist
+		-- or if the file is empty/invalid
+		pcall(function()
+			vim.cmd("RainbowAlign")
+		end)
+	end,
+})
 
 -- INFO: Buffer line
 vim.pack.add({ "https://github.com/akinsho/bufferline.nvim" }, { confirm = false })
@@ -844,7 +863,7 @@ vim.api.nvim_create_autocmd("FileType", {
 		)
 		vim.keymap.set("n", "<localleader>Si", function()
 			vim.cmd("botright split")
-			vim.api.nvim_win_set_height(0, 10) -- 15 lines tall
+			vim.api.nvim_win_set_height(0, 8) -- 8 lines tall
 			vim.cmd("terminal ipython")
 			vim.cmd("startinsert")
 		end, { buffer = true, desc = "Open [i]Python terminal (horizontal split)" })
