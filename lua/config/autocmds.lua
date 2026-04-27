@@ -36,15 +36,58 @@ vim.api.nvim_create_autocmd("FileType", {
 	end,
 })
 
--- go to last loc when opening a buffer
+-- restore cursor to file position in previous editing session
 vim.api.nvim_create_autocmd("BufReadPost", {
-	callback = function(event)
-		local exclude = { "gitcommit" } -- don't remember position in commit messages
-		local mark = vim.api.nvim_buf_get_mark(event.buf, '"')
-		local lcount = vim.api.nvim_buf_line_count(event.buf)
-		if mark[1] > 0 and mark[1] <= lcount then
-			pcall(vim.api.nvim_win_set_cursor, 0, mark)
+	callback = function(args)
+		local mark = vim.api.nvim_buf_get_mark(args.buf, '"')
+		local line_count = vim.api.nvim_buf_line_count(args.buf)
+		if mark[1] > 0 and mark[1] <= line_count then
+			vim.api.nvim_win_set_cursor(0, mark)
+			-- defer centering slightly so it's applied after render
+			vim.schedule(function()
+				vim.cmd("normal! zz")
+			end)
 		end
+	end,
+})
+
+-- no auto continue comments on new line
+vim.api.nvim_create_autocmd("FileType", {
+	group = vim.api.nvim_create_augroup("no_auto_comment", {}),
+	callback = function()
+		vim.opt_local.formatoptions:remove({ "c", "r", "o" })
+	end,
+})
+
+-- ide like highlight when stopping cursor
+vim.api.nvim_create_autocmd("CursorMoved", {
+	group = vim.api.nvim_create_augroup("LspReferenceHighlight", { clear = true }),
+	desc = "Highlight references under cursor",
+	callback = function()
+		-- Only run if the cursor is not in insert mode
+		if vim.fn.mode() ~= "i" then
+			local clients = vim.lsp.get_clients({ bufnr = 0 })
+			local supports_highlight = false
+			for _, client in ipairs(clients) do
+				if client.server_capabilities.documentHighlightProvider then
+					supports_highlight = true
+					break -- Found a supporting client, no need to check others
+				end
+			end
+			-- 3. Proceed only if an LSP is active AND supports the feature
+			if supports_highlight then
+				vim.lsp.buf.clear_references()
+				vim.lsp.buf.document_highlight()
+			end
+		end
+	end,
+})
+-- ide like highlight when stopping cursor
+vim.api.nvim_create_autocmd("CursorMovedI", {
+	group = "LspReferenceHighlight",
+	desc = "Clear highlights when entering insert mode",
+	callback = function()
+		vim.lsp.buf.clear_references()
 	end,
 })
 
@@ -101,27 +144,5 @@ vim.api.nvim_create_autocmd("FileType", {
 	callback = function()
 		vim.opt_local.wrap = true
 		vim.opt_local.spell = true
-	end,
-})
-
--- csv Align
--- Create an autocommand for CSV files
-vim.api.nvim_create_autocmd("BufWritePre", {
-	pattern = "*.csv",
-	callback = function()
-		-- Use pcall to prevent errors if the command doesn't exist
-		-- or if the file is empty/invalid
-		pcall(function()
-			vim.cmd("RainbowAlign")
-		end)
-	end,
-})
-
-vim.api.nvim_create_autocmd("FileType", {
-	pattern = "floaterm",
-	callback = function()
-		vim.opt_local.buflisted = false
-		-- Buffer-local mapping: only active when you are in a floaterm
-		vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n><cmd>FloatermToggle<CR>", { buffer = true })
 	end,
 })
