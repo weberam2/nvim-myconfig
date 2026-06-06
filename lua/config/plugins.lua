@@ -30,26 +30,27 @@ require("nvim-treesitter").setup({
 	sync_install = true,
 	modules = {},
 	ignore_install = {},
-	"bash",
-	"bibtex",
-	"diff", -- Better highlighting for git diffs
-	"html",
-	"json",
-	"latex",
-	"lua",
-	"markdown",
-	"markdown_inline", -- CRITICAL: Highlights code blocks inside markdown/quarto
-	"ninja",
-	"python",
-	"query", -- Helps you debug TreeSitter highlighting issues
-	"r",
-	"regex", -- Syntax highlighting for complex Python/R regex strings
-	"rnoweb",
-	"rst",
-	"vim",
-	"vimdoc",
-	"yaml", -- For your Quarto headers, Docker, and Home Assistant
-	ensure_installed = {},
+	ensure_installed = {
+		"bash",
+		"bibtex",
+		"diff", -- Better highlighting for git diffs
+		"html",
+		"json",
+		"latex",
+		"lua",
+		"markdown",
+		"markdown_inline", -- CRITICAL: Highlights code blocks inside markdown/quarto
+		"ninja",
+		"python",
+		"query", -- Helps you debug TreeSitter highlighting issues
+		"r",
+		"regex", -- Syntax highlighting for complex Python/R regex strings
+		"rnoweb",
+		"rst",
+		"vim",
+		"vimdoc",
+		"yaml", -- For your Quarto headers, Docker, and Home Assistant
+	},
 	auto_install = true, -- autoinstall languages that are not installed yet
 	highlight = {
 		enable = true,
@@ -61,18 +62,7 @@ require("nvim-treesitter").setup({
 vim.pack.add({ "https://github.com/L3MON4D3/LuaSnip" }, { confirm = false })
 require("LuaSnip").setup({
 	version = "2.*",
-	build = (function()
-		-- Build Step is needed for regex support in snippets.
-		-- This step is not supported in many windows environments.
-		-- Remove the below condition to re-enable on windows.
-		if vim.fn.has("win32") == 1 or vim.fn.executable("make") == 0 then
-			return
-		end
-		return "make install_jsregexp"
-	end)(),
-	-- dependencies
 	"https://github.com/rafamadriz/friendly-snippets",
-	opts = {},
 })
 
 vim.pack.add({ "https://github.com/rafamadriz/friendly-snippets" }, { confirm = false })
@@ -144,7 +134,7 @@ local lsp_servers = {
 	-- DYNAMIC LANGUAGES ---
 	pyright = {}, -- Python: Best for "Go to definition" and type logic
 	ruff = {}, -- Python: Handles linting and lightning-fast formatting
-	r_language_server = {}, -- R: The standard for R development
+	-- r_language_server = {}, -- R: The standard for R development
 	--- DOCUMENTATION & MARKUP ---
 	marksman = {}, -- Markdown: For your blog and general notes
 	texlab = {}, -- LaTeX: For your academic papers and Beamer slides
@@ -416,18 +406,21 @@ vim.keymap.set("n", "<leader>E", "<cmd>Neotree toggle<CR>", { desc = "Open/Close
 vim.pack.add({ "https://github.com/R-nvim/R.nvim" })
 -- vim.g.R_filetypes = { "r", "rmd" }
 require("R").setup({
+	-- nvimcom_home = vim.fn.expand("~/.local/share/nvim-myconfig/nvimcom"),
 	-- Create a table with the options to be passed to setup()
 	hook = {
 		on_filetype = function()
+			-- 1. Disable the 80-character limit
+			vim.opt_local.textwidth = 0
+			-- 2. Remove "t" from formatoptions so text doesn't auto-wrap
+			vim.opt_local.formatoptions:remove("t")
 			vim.api.nvim_buf_set_keymap(0, "n", "<Enter>", "<Plug>RDSendLine", {})
 			vim.api.nvim_buf_set_keymap(0, "v", "<Enter>", "<Plug>RSendSelection", {})
-
 			-- This function will be called at the FileType event
 			-- of files supported by R.nvim. This is an
 			-- opportunity to create mappings local to buffers.
 			-- vim.keymap.set("n", "<Enter>", "<Plug>RDSendLine", { buffer = true })
 			-- vim.keymap.set("x", "<Enter>", "<Plug>RSendSelection", { buffer = true })
-
 			local wk = require("which-key")
 			wk.add({
 				buffer = true,
@@ -519,7 +512,7 @@ vim.api.nvim_create_autocmd("FileType", {
 		})
 	end,
 })
-require("render-markdown").setup({})
+require("render-markdown").setup({ latex = { enabled = false } })
 
 -- INFO: paste images
 vim.pack.add({ "https://github.com/HakonHarnes/img-clip.nvim" }, { confirm = false })
@@ -920,12 +913,27 @@ require("quarto").setup({
 		never_run = { "yaml" }, -- filetypes which are never sent to a code runner
 	},
 })
-local runner = require("quarto.runner")
-vim.keymap.set("n", "<localleader>Sc", runner.run_cell, { desc = "run cell", silent = true })
-vim.keymap.set("n", "<localleader>Su", runner.run_above, { desc = "run cell and above", silent = true })
-vim.keymap.set("n", "<localleader>Sa", runner.run_all, { desc = "run all cells", silent = true })
-vim.keymap.set("n", "<localleader>Sl", runner.run_line, { desc = "run line", silent = true })
-vim.keymap.set("v", "<localleader>S", runner.run_range, { desc = "run visual range", silent = true })
-vim.keymap.set("n", "<localleader>SA", function()
-	runner.run_all(true)
-end, { desc = "run all cells of all languages", silent = true })
+vim.api.nvim_create_autocmd("FileType", {
+	pattern = { "quarto" },
+	callback = function()
+		local runner = require("quarto.runner")
+		vim.keymap.set("n", "<localleader>Sc", runner.run_cell, { desc = "run cell", silent = true, buffer = true })
+		vim.keymap.set(
+			"n",
+			"<localleader>Su",
+			runner.run_above,
+			{ desc = "run cell and above", silent = true, buffer = true }
+		)
+		vim.keymap.set("n", "<localleader>Sa", runner.run_all, { desc = "run all cells", silent = true, buffer = true })
+		vim.keymap.set("n", "<localleader>Sl", runner.run_line, { desc = "run line", silent = true, buffer = true })
+		vim.keymap.set(
+			"v",
+			"<localleader>S",
+			runner.run_range,
+			{ desc = "run visual range", silent = true, buffer = true }
+		)
+		vim.keymap.set("n", "<localleader>SA", function()
+			runner.run_all(true)
+		end, { desc = "run all cells of all languages", silent = true, buffer = true })
+	end,
+})
